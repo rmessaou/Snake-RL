@@ -22,7 +22,7 @@ class QNet(nn.Module):
             os.makedirs(model_folder)
         file = os.path.join(model_folder,name)
         torch.save(self.state_dict(),file)
-    
+
 class QNetTrainer:
     def __init__(self, model, lr, gamma):
         self.lr = lr
@@ -32,6 +32,39 @@ class QNetTrainer:
         self.loss = nn.MSELoss()
     
     def train_step(self, state, action, reward, new_state, finish):
-        pass
+        state = torch.tensor(state, dtype=torch.float)
+        reward = torch.tensor(reward, dtype=torch.float)
+        action = torch.tensor(action, dtype=torch.long)
+        new_state = torch.tensor(new_state, dtype=torch.float)
+
+        # Handle multiple sizes:
+        if len(state.shape) == 1:
+            # shape should be (1, x) --> append 1 dimension
+            state = torch.unsqueeze(state, dim=0)
+            new_state = torch.unsqueeze(new_state, dim=0)
+            action = torch.unsqueeze(action, dim=0)
+            finish = torch.unsqueeze(finish, dim=0)
+
+            # convert finish to a tuple
+            finish = (finish, )
+
+        # Predict Q value with current state
+        pred = self.model(state)
+
+        # Qnew = r + y(max(next_predQ))
+        target = pred.clone()
+        for idx in range(len(finish)):
+            Qnew = reward[idx]
+            if not finish[idx]:
+                Qnew = reward[idx] + self.gamma*torch.max(self.model(new_state[idx]))
+            
+            target[idx][torch.argmax(action[idx]).item()] = Qnew
+        
+        # Optimizer
+        self.optimizer.zero_grad()
+        loss = self.criterion(target, pred)
+        loss.backward()
+        self.optimizer.step()
+
 
 

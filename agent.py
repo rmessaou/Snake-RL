@@ -3,7 +3,7 @@ import random
 import numpy as np
 from game import SnakeGameRL, Direction, Point, BLOCK_SIZE
 from collections import deque
-
+from model import QNet, QNetTrainer
 MAX_MEMORY = 100000
 BATCH_SITE = 1000
 LR = 0.001
@@ -14,10 +14,10 @@ class Agent:
         self.random_max = random_max
         self.nb_games = 0
         self.epsilon = 0 # Parameter to control the randomness
-        self.gamma = 0 # Discount rate
+        self.gamma = 0 # Discount rate (usually around 0.9 or 0.8)
         self.memory = deque(maxlen=MAX_MEMORY) # if exceeded, elements from left are dropped automatically
-        self.model = None
-        self.trainer = None
+        self.model = QNet(11,256,3)
+        self.trainer = QNetTrainer(self.model, lr=LR, gamma=self.gamma)
         # TODO: model, trainer
 
     def get_state(self, game:SnakeGameRL):
@@ -127,7 +127,7 @@ class Agent:
 
             # Predict action from state
             state_torch = torch.tensor(state, dtype=torch.float32)
-            prediction = self.model.predict(state_torch)
+            prediction = self.model(state_torch)
             
             # Take max of the vector
             move_idx = torch.argmax(prediction).item()
@@ -170,8 +170,8 @@ def train():
 
             if score > best_score:
                 best_score = score
-                # TODO: save model
-            
+                agent.model.save()
+                            
             print('Game ',agent.nb_games, 'Score: ', score, 'Record: ', best_score)
             # TODO Plots
 
