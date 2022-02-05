@@ -16,12 +16,18 @@ class QNet(nn.Module):
         x = self.linear2(x)
         return x
 
-    def save(self, name="model.pth"):
-        model_folder = "./models"
+    def save(self, name="model.pth", folder="./models"):
+        model_folder = folder
         if not os.path.exists(model_folder):
             os.makedirs(model_folder)
         file = os.path.join(model_folder,name)
         torch.save(self.state_dict(),file)
+
+    def load(self, name="model.pth", folder="./models"):
+        if not os.path.exists(folder):
+            print("[ERROR]: no folder named {}".format(folder))
+        file = os.path.join(folder,name)
+        self.load_state_dict(torch.load(file))
 
 class QNetTrainer:
     def __init__(self, model, lr, gamma):
@@ -57,8 +63,8 @@ class QNetTrainer:
             Qnew = reward[idx]
             if not finish[idx]:
                 Qnew = reward[idx] + self.gamma*torch.max(self.model(new_state[idx]))
-            
-            target[idx][torch.argmax(action).item()] = Qnew
+                
+            target[idx][torch.argmax(action[idx]).item()] = Qnew
         
         # Optimizer
         self.optimizer.zero_grad()

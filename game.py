@@ -29,11 +29,12 @@ BLUE2 = (0, 100, 255)
 BLACK = (0,0,0)
 
 BLOCK_SIZE = 20
-SPEED = 20
+SPEED = 100
 
 class SnakeGameRL:
     
-    def __init__(self, w=640, h=480, max_time_factor=100):
+    def __init__(self, w=640, h=480, max_time_factor=100, model=None):
+        self.model = model
         self.w = w
         self.h = h
         # init display

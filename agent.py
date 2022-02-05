@@ -1,3 +1,5 @@
+from enum import Enum
+from os import name
 import torch
 import random
 import numpy as np
@@ -5,13 +7,15 @@ from game import SnakeGameRL, Direction, Point, BLOCK_SIZE
 from collections import deque
 from model import QNet, QNetTrainer
 from helper import plot
+import pygame
+import sys
 
 MAX_MEMORY = 100000
 BATCH_SITE = 1000
 LR = 0.001
 
 class Agent:
-    def __init__(self, eps_subfactor=90, random_max=200):
+    def __init__(self, eps_subfactor=80, random_max=200):
         self.eps_factor = eps_subfactor
         self.random_max = random_max
         self.nb_games = 0
@@ -113,7 +117,7 @@ class Agent:
         """
         self.trainer.train_step(state, action, reward, next_state, finish)
 
-    def get_action(self, state):
+    def get_action(self, state, train=True):
         """Get the action to perform. Tradeoff between exploration and exploitation
 
         Args:
@@ -121,7 +125,7 @@ class Agent:
         """
         self.epsilon = self.eps_factor - self.nb_games
         move = [0,0,0]
-        if random.randint(0,self.random_max) < self.epsilon:
+        if train and random.randint(0,self.random_max) < self.epsilon:
             # Sample an action randomly
             move_idx = random.randint(0,2)
             move[move_idx] = 1
@@ -137,7 +141,7 @@ class Agent:
         
         return move
 
-def train():
+def train(train_model_name="trained_model"):
     """Train the agent
     """
     scores = []
@@ -172,14 +176,48 @@ def train():
 
             if score > best_score:
                 best_score = score
-                agent.model.save()
+                agent.model.save(name=train_model_name)
                             
             print('Game ',agent.nb_games, 'Score: ', score, 'Record: ', best_score)
             scores.append(score)
             total_score+=score
             mean_scores.append(total_score/agent.nb_games)
             plot(scores, mean_scores)
-            
+
+def eval(model_name="final_model"):
+    game = SnakeGameRL()
+    agent = Agent()
+    agent.model.load(name=model_name)
+    agent.model.eval()
+
+    while True:
+        state = agent.get_state(game)
+        action = agent.get_action(state, train=False)
+        _, finish, score = game.play_step(action)
+
+        if finish:
+            print("Your score is {}".format(score))
+            break
+    
+    pygame.quit()
 
 if __name__ == '__main__':
-    train()
+    eval_model_name = "final_model.pth"
+    train_model_name = "train_model.pth"
+    
+    eval_mode = True
+    if len(sys.argv) == 1:
+        print("No argument given .. set to evaluate mode as default")
+    else:
+        if sys.argv[1] == "eval":
+            print("Set to evaluate mode as default")            
+        elif sys.argv[1] == "train":
+            print("Set to train mode as default")
+            eval_mode = False
+        else:
+            print("Argument not recognizable .. set to evaluate mode as default")
+
+    if eval_mode:
+        eval(eval_model_name)
+    else:
+        train(train_model_name)
