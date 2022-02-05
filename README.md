@@ -1,6 +1,21 @@
 # Snake-RL
 A snake that knows how to win
+# How to use
 
+For training:
+1. You can modify the model architecture in `model.py` and the model parameters in `agent.py`
+2. Specify the trained model name in `agent.py`
+3. Run
+```bash
+python agent.py train
+```
+
+For evaluating
+1. Specify the model name and path in `agent.py` 
+2. Run
+```bash
+python agent.py eval
+```
 # Reward
 - eat: +10
 - lose: -10
