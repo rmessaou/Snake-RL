@@ -117,6 +117,8 @@ class SnakeGameRL:
         # hits itself
         if pt in self.snake[1:]:
             return True
+        
+        return False
 
         
     def _update_ui(self):

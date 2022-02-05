@@ -43,7 +43,7 @@ class QNetTrainer:
             state = torch.unsqueeze(state, dim=0)
             new_state = torch.unsqueeze(new_state, dim=0)
             action = torch.unsqueeze(action, dim=0)
-            finish = torch.unsqueeze(finish, dim=0)
+            reward = torch.unsqueeze(reward, dim=0)
 
             # convert finish to a tuple
             finish = (finish, )
@@ -58,11 +58,11 @@ class QNetTrainer:
             if not finish[idx]:
                 Qnew = reward[idx] + self.gamma*torch.max(self.model(new_state[idx]))
             
-            target[idx][torch.argmax(action[idx]).item()] = Qnew
+            target[idx][torch.argmax(action).item()] = Qnew
         
         # Optimizer
         self.optimizer.zero_grad()
-        loss = self.criterion(target, pred)
+        loss = self.loss(target, pred)
         loss.backward()
         self.optimizer.step()
 
